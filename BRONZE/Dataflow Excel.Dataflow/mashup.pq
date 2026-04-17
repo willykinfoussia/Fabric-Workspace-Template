@@ -1,136 +1,82 @@
 [StagingDefinition = [Kind = "FastCopy"]]
 section Section1;
 shared Configuration = let
-    Source = Excel.Workbook(Web.Contents(#"ExcelUrl"), null, true),
-    ReportCASheet = try Source{[Item="Sheet_Name", Kind="Sheet"]}[Data] otherwise null,
-    FirstVisibleSheet =
-    if ReportCASheet <> null
-    then ReportCASheet
-    else
+    WorkbookPath          = #"ExcelUrl",
+    PreferredSheetName    = "Sheet_Name",
+    SparseColumnThreshold = 0.75,
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    GetFirstVisibleSheet = (source as table, preferredName as text) as table =>
+        try
+            source{[Item = preferredName, Kind = "Sheet"]}[Data]
+        otherwise
+            Table.SelectRows(
+                source,
+                each [Kind] = "Sheet" and ([Hidden] = false or [Hidden] = null)
+            ){0}[Data],
+
+    ReplaceErrorsWithNull = (t as table) as table =>
+        Table.ReplaceErrorValues(
+            t,
+            List.Transform(Table.ColumnNames(t), each {_, null})
+        ),
+
+    // List.MatchesAny court-circuite dès le 1er élément valide
+    // → évite de scanner toute la ligne quand une valeur non-nulle est trouvée tôt
+    RemoveEmptyRows = (t as table) as table =>
         Table.SelectRows(
-            Source,
-            each [Kind] = "Sheet" and ([Hidden] = false or [Hidden] = null)
-        ){0}[Data],
-
-    // --- BEFORE ANY ROW CLEANING ---
-    Remove90PctErrorColumns =
-    let
-        RowCount = Table.RowCount(FirstVisibleSheet),
-        Cols = Table.ColumnNames(FirstVisibleSheet),
-
-        ColumnsToRemove =
-            if RowCount = 0 then
-                {}
-            else
-                List.Select(
-                    Cols,
-                    (col) =>
-                        let
-                            L = Table.Column(FirstVisibleSheet, col),
-                            ErrorCount =
-                                List.Count(
-                                    List.Select(
-                                        L,
-                                        (v) => let t = try v in t[HasError]
-                                    )
-                                )
-                        in
-                            (ErrorCount / RowCount) >= 0.9
-                )
-    in
-        Table.RemoveColumns(FirstVisibleSheet, ColumnsToRemove),
-
-    // NEW: sanitize Excel errors (#REF!, #VALUE!, ...) early
-    SanitizeErrors =
-    Table.TransformColumns(
-        Remove90PctErrorColumns,
-        List.Transform(
-            Table.ColumnNames(Remove90PctErrorColumns),
-            (c) => { c, each try _ otherwise null, type any }
-        )
-    ),
-
-    // Optional: if some '#REF!' are literal text
-    SanitizeRefText =
-    Table.ReplaceValue(
-        SanitizeErrors,
-        "#REF!",
-        null,
-        Replacer.ReplaceValue,
-        Table.ColumnNames(SanitizeErrors)
-    ),
-
-    // --- NOW SAFE ---
-    #"Remove All Error Rows" =
-    Table.RemoveRowsWithErrors(
-        SanitizeRefText,
-        Table.ColumnNames(SanitizeRefText)
-    ),
-
-    // continue with your existing logic
-    CleanRows =
-        Table.SelectRows(
-            #"Remove All Error Rows",
-            each List.NonNullCount(
-                List.Select(Record.FieldValues(_), each _ <> "" and _ <> null)
-            ) > 0
+            t,
+            each List.MatchesAny(Record.FieldValues(_), each _ <> null and _ <> "")
         ),
 
-    CleanColumns =
-        Table.RemoveColumns(
-            CleanRows,
-            List.Select(
-                Table.ColumnNames(CleanRows),
-                each List.NonNullCount(
-                    List.Select(Table.Column(CleanRows, _), each _ <> "" and _ <> null)
-                ) = 0
-            )
-        ),
+    RemoveSparseColumns = (t as table, threshold as number) as table =>
+        let
+            ColNames = Table.ColumnNames(t),
+            RowCount = Table.RowCount(t),
+            ColData  = if RowCount = 0 then {} else Table.ToColumns(t),
 
-    AddNullCount =
-        Table.AddColumn(
-            CleanColumns,
-            "NullCount",
-            each List.Count(List.Select(Record.FieldValues(_), each _ = null)),
-            Int64.Type
-        ),
+            // List.Accumulate : pas de liste intermédiaire allouée
+            // (vs List.Count(List.Select(...)) qui crée une liste filtrée en mémoire)
+            CountNullOrEmpty = (lst as list) as number =>
+                List.Accumulate(lst, 0, (acc, v) => if v = null or v = "" then acc + 1 else acc),
 
-    FirstValidRowIndex = List.PositionOf(AddNullCount[NullCount], 0),
-
-    CleanedForRetry =
-        if FirstValidRowIndex = -1 then
-            let
-                RowCount = Table.RowCount(CleanColumns),
-                ColumnsToRemove =
+            SparseIndices =
+                if RowCount = 0 then
+                    {}
+                else
                     List.Select(
-                        Table.ColumnNames(CleanColumns),
-                        (col) =>
-                            List.Count(
-                                List.Select(Table.Column(CleanColumns, col), each _ = null or _ = "")
-                            ) / RowCount > 0.95
-                    )
+                        List.Positions(ColData),
+                        (i) => CountNullOrEmpty(ColData{i}) / RowCount >= threshold
+                    ),
+
+            ToRemove = List.Transform(SparseIndices, (i) => ColNames{i})
+        in
+            if List.Count(ToRemove) = 0 then t
+            else Table.RemoveColumns(t, ToRemove),
+
+    PromoteAndTyped = (t as table) as table =>
+        if Table.RowCount(t) = 0 then
+            t
+        else
+            let
+                Promoted = Table.PromoteHeaders(t, [PromoteAllScalars = true]),
+                ColNames = Table.ColumnNames(Promoted)
             in
-                Table.AddColumn(
-                    Table.RemoveColumns(CleanColumns, ColumnsToRemove),
-                    "NullCount",
-                    each List.Count(List.Select(Record.FieldValues(_), each _ = null)),
-                    Int64.Type
-                )
-        else
-            AddNullCount,
+                Table.TransformColumnTypes(
+                    Promoted,
+                    List.Transform(ColNames, each {_, type text})
+                ),
 
-    FinalFirstValidRowIndex =
-        List.PositionOf(CleanedForRetry[NullCount], 0),
+    // ── Pipeline ─────────────────────────────────────────────────────────────
 
-    KeepFromFirstValid =
-        if FinalFirstValidRowIndex <> -1 then
-            Table.Skip(CleanedForRetry, FinalFirstValidRowIndex)
-        else
-            #table({}, {}),
-
-    #"Promoted Headers" =
-        Table.PromoteHeaders(KeepFromFirstValid, [PromoteAllScalars = true]),
-    #"ToText" = Table.TransformColumnTypes(#"Promoted Headers", List.Transform(Table.ColumnNames(#"Promoted Headers"),each {_, type text}))
+    Source      = Excel.Workbook(Web.Contents(WorkbookPath), null, true),
+    RawSheet    = GetFirstVisibleSheet(Source, PreferredSheetName),
+    NoErrors    = ReplaceErrorsWithNull(RawSheet),
+    NoEmptyRows = RemoveEmptyRows(NoErrors),
+    Buffered    = Table.Buffer(NoEmptyRows),   // ← un seul buffer, avant toutes les analyses multi-passes
+    NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
+    FinalTable  = PromoteAndTyped(NoSparse)
 in
-    #"ToText";
-shared ExcelUrl = "https://spherea-my.sharepoint.com/personal/willy_kinfoussia_external_spherea_com/Documents/Documents/PowerQuery%20Project/CA%20Spherea%20SP%26I/Source/Dim%20Client%26Projet%20-%2003-2026.xlsx" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
+    FinalTable;
+shared ExcelUrl = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
