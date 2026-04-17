@@ -1,0 +1,173 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "b9da84c4-3a4c-96a4-48ba-9074fb674d02",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "BRONZE_LAKEHOUSE": {
+              "value": {
+                "value": "@pipeline().parameters.BRONZE_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "MODE_TEST": {
+              "value": {
+                "value": "@pipeline().parameters.MODE_TEST",
+                "type": "Expression"
+              },
+              "type": "bool"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Bronze_To_Silver",
+        "dependsOn": [
+          {
+            "activity": "Dataflow Excel",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "RefreshDataflow",
+        "typeProperties": {
+          "dataflowId": "869013f2-d3d0-bc57-413d-9d4f4b8162d7",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "notifyOption": "NoNotification",
+          "dataflowType": "DataflowFabric"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Dataflow Excel",
+        "dependsOn": []
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "543e94df-09df-8552-4f96-743136bab5b2",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "BRONZE_LAKEHOUSE": {
+              "value": {
+                "value": "@pipeline().parameters.BRONZE_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "SILVER_LAKEHOUSE": {
+              "value": {
+                "value": "@pipeline().parameters.SILVER_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "MODE_TEST": {
+              "value": {
+                "value": "@pipeline().parameters.MODE_TEST",
+                "type": "Expression"
+              },
+              "type": "bool"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Silver_To_Silver",
+        "dependsOn": [
+          {
+            "activity": "Bronze_To_Silver",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "fe6cbc81-74e2-a0b7-491a-810ec231ce6c",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "parameters": {
+            "SILVER_LAKEHOUSE": {
+              "value": {
+                "value": "@pipeline().parameters.SILVER_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "GOLD_LAKEHOUSE": {
+              "value": {
+                "value": "@pipeline().parameters.GOLD_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "MODE_TEST": {
+              "value": {
+                "value": "@pipeline().parameters.MODE_TEST",
+                "type": "Expression"
+              },
+              "type": "bool"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Silver_To_Gold",
+        "dependsOn": [
+          {
+            "activity": "Silver_To_Silver",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "MODE_TEST": {
+        "type": "bool",
+        "defaultValue": false
+      },
+      "BRONZE_LAKEHOUSE": {
+        "type": "string",
+        "defaultValue": "LH_BRONZE"
+      },
+      "SILVER_LAKEHOUSE": {
+        "type": "string",
+        "defaultValue": "LH_SILVER"
+      },
+      "GOLD_LAKEHOUSE": {
+        "type": "string",
+        "defaultValue": "LH_GOLD"
+      }
+    }
+  }
+}
