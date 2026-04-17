@@ -1,7 +1,7 @@
 [StagingDefinition = [Kind = "FastCopy"]]
 section Section1;
 shared Configuration = let
-    WorkbookPath          = #"ExcelUrl",
+    WorkbookPath          = ExcelUrl,
     PreferredSheetName    = "Sheet_Name",
     SparseColumnThreshold = 0.75,
 
@@ -55,16 +55,15 @@ shared Configuration = let
             if List.Count(ToRemove) = 0 then t
             else Table.RemoveColumns(t, ToRemove),
 
-    PromoteAndTyped = (t as table) as table =>
+    Typed = (t as table) as table =>
         if Table.RowCount(t) = 0 then
             t
         else
             let
-                Promoted = Table.PromoteHeaders(t, [PromoteAllScalars = true]),
-                ColNames = Table.ColumnNames(Promoted)
+                ColNames = Table.ColumnNames(t)
             in
                 Table.TransformColumnTypes(
-                    Promoted,
+                    t,
                     List.Transform(ColNames, each {_, type text})
                 ),
 
@@ -76,7 +75,8 @@ shared Configuration = let
     NoEmptyRows = RemoveEmptyRows(NoErrors),
     Buffered    = Table.Buffer(NoEmptyRows),   // ← un seul buffer, avant toutes les analyses multi-passes
     NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
-    FinalTable  = PromoteAndTyped(NoSparse)
+    Promoted    = Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]),
+    FinalTable  = Typed(Promoted)
 in
     FinalTable;
 shared ExcelUrl = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
