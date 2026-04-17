@@ -6,6 +6,22 @@
   "name": "Dataflow Excel",
   "queryGroups": [],
   "documentLocale": "en-US",
-  "queriesMetadata": {},
-  "connections": []
+  "queriesMetadata": {
+    "Configuration": {
+      "queryId": "525b700d-a716-4d6b-a82d-2b405c402960",
+      "queryName": "Configuration"
+    },
+    "ExcelUrl": {
+      "queryId": "583ae0d8-44fe-4ac9-9a30-63a92fb43e3f",
+      "queryName": "ExcelUrl",
+      "loadEnabled": false
+    }
+  },
+  "connections": [
+    {
+      "path": "https://spherea-my.sharepoint.com/personal/willy_kinfoussia_external_spherea_com/",
+      "kind": "Web",
+      "connectionId": "{\"ClusterId\":\"7d66b12b-3b63-47bc-b79f-1cabfd93675b\",\"DatasourceId\":\"21d17fca-5446-4e0c-849f-1d981efb07c0\"}"
+    }
+  ]
 }

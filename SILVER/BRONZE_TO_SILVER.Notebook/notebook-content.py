@@ -29,9 +29,53 @@
 
 # CELL ********************
 
-# Welcome to your new notebook
-# Type here in the cell editor to add code!
+import fabrictools as ft
+print(ft.__version__)
 
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# ─────────────────────────────────────────────────────────────
+# CONFIGURATION — Modifier ces paramètres selon votre environnement
+# ─────────────────────────────────────────────────────────────
+MODE_TEST = True
+
+# Noms des Lakehouses dans Microsoft Fabric
+BRONZE_LAKEHOUSE = "LH_BRONZE"   # Nom du Lakehouse source
+SILVER_LAKEHOUSE = "LH_SILVER"   # Nom du Lakehouse destination
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Exécution du pipeline Bronze → Silver
+# La commande suivante :
+# 1. lit toutes les tables Bronze dans le schéma `dbo`,
+# 2. applique le nettoyage standard (`clean_data`),
+# 3. écrit les résultats dans le Lakehouse Silver.
+# 
+# Le paramètre `continue_on_error=True` permet de poursuivre même si certaines tables échouent.
+
+# CELL ********************
+
+result = ft.clean_and_write_all_tables(
+    source_lakehouse_name=BRONZE_LAKEHOUSE,
+    target_lakehouse_name=SILVER_LAKEHOUSE,
+    include_schemas=["dbo"],
+    continue_on_error=True,
+)
+display(result)
 
 # METADATA ********************
 
