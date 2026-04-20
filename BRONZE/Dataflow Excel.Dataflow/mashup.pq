@@ -55,18 +55,6 @@ shared Configuration = let
             if List.Count(ToRemove) = 0 then t
             else Table.RemoveColumns(t, ToRemove),
 
-    Typed = (t as table) as table =>
-        if Table.RowCount(t) = 0 then
-            t
-        else
-            let
-                ColNames = Table.ColumnNames(t)
-            in
-                Table.TransformColumnTypes(
-                    t,
-                    List.Transform(ColNames, each {_, type text})
-                ),
-
     // ── Pipeline ─────────────────────────────────────────────────────────────
 
     Source      = Excel.Workbook(Web.Contents(WorkbookPath), null, true),
@@ -76,7 +64,7 @@ shared Configuration = let
     Buffered    = Table.Buffer(NoEmptyRows),   // ← un seul buffer, avant toutes les analyses multi-passes
     NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
     Promoted    = Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]),
-    FinalTable  = Typed(Promoted)
+    FinalTable  = Table.TransformColumnTypes(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, type text}))
 in
     FinalTable;
 shared ExcelUrl = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];

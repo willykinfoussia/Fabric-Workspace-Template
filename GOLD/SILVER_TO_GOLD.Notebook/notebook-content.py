@@ -29,9 +29,62 @@
 
 # CELL ********************
 
-# Welcome to your new notebook
-# Type here in the cell editor to add code!
+import fabrictools as ft
+print(ft.__version__)
 
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# --- Paramètres (adapter à votre environnement) ---
+SILVER_LAKEHOUSE = "LH_SILVER"
+GOLD_LAKEHOUSE = "LH_GOLD"
+
+PATH_TABLE_ = "Processed_"
+
+PATH_GOLD_TABLE_ = ""
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+ft.write_lakehouse(
+    source,
+    lakehouse_name=GOLD_LAKEHOUSE,
+    relative_path=PATH_GOLD_TABLE_,
+    mode="overwrite",
+ )
 
 # METADATA ********************
 
