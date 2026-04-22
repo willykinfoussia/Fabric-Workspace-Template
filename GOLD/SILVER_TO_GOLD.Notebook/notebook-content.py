@@ -45,10 +45,6 @@ print(ft.__version__)
 SILVER_LAKEHOUSE = "LH_SILVER"
 GOLD_LAKEHOUSE = "LH_GOLD"
 
-PATH_TABLE_ = "Processed_"
-
-PATH_GOLD_TABLE_ = ""
-
 # METADATA ********************
 
 # META {
@@ -58,33 +54,12 @@ PATH_GOLD_TABLE_ = ""
 
 # CELL ********************
 
-source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
-ft.write_lakehouse(
-    source,
-    lakehouse_name=GOLD_LAKEHOUSE,
-    relative_path=PATH_GOLD_TABLE_,
-    mode="overwrite",
- )
+result = ft.make_business_ready(
+    source_lakehouse_name=SILVER_LAKEHOUSE,
+    target_lakehouse_name=GOLD_LAKEHOUSE,
+    tables=["Processed_", "Cleaned_"]
+)
+display(result)
 
 # METADATA ********************
 
