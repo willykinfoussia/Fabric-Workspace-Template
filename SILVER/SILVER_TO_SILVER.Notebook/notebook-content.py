@@ -53,6 +53,24 @@ PATH_PROCESSED_TABLE_ = "Processed_"
 
 # CELL ********************
 
+dimensions = ft.generate_dimensions(
+    lakehouse_name=SILVER_LAKEHOUSE,
+    include_date=True,
+    include_country=False,
+    include_city=False,
+    start_date="2024-01-01",              # Remplacez par votre date de début souhaitée
+    end_date=str(dt.date.today()),           # Sera converti automatiquement à la date du jour (ex: "2026-04-21")
+)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
 
 # METADATA ********************
