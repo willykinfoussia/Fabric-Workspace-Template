@@ -57,7 +57,7 @@ GOLD_LAKEHOUSE = "LH_GOLD"
 result = ft.make_business_ready(
     source_lakehouse_name=SILVER_LAKEHOUSE,
     target_lakehouse_name=GOLD_LAKEHOUSE,
-    tables=["Processed_", "Cleaned_"]
+    tables=["Processed_", "Cleaned_", "Dimension_Date"]
 )
 display(result)
 
