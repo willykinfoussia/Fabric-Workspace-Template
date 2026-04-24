@@ -64,6 +64,11 @@ source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
 
 # CELL ********************
 
+target = ft.build_tcd(source, 
+    rows="Region", 
+    columns="Year", 
+    values="Sales"
+)
 
 # METADATA ********************
 
@@ -75,7 +80,7 @@ source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
 # CELL ********************
 
 ft.write_lakehouse(
-    source,
+    target,
     lakehouse_name=SILVER_LAKEHOUSE,
     relative_path=PATH_PROCESSED_TABLE_,
     mode="overwrite",
