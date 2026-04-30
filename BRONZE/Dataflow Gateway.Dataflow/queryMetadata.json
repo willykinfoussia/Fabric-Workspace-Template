@@ -30,7 +30,8 @@
     },
     "DataDestination": {
       "queryId": "bcd56a26-0a15-458d-80d7-0f42d9f0c57a",
-      "queryName": "DataDestination"
+      "queryName": "DataDestination",
+      "loadEnabled": false
     },
     "ExcelFile": {
       "queryId": "14534325-229c-4187-8ab8-34d60b570888",
