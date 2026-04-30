@@ -1,9 +1,9 @@
-[StagingDefinition = [Kind = "FastCopy"]]
+[DefaultOutputDestinationSettings = [DestinationDefinition = [Kind = "Reference", QueryName = "DefaultDestination", IsNewTarget = true], UpdateMethod = [Kind = "Replace"], DestinationTypeSettings = [Kind = "Table"]], StagingDefinition = [Kind = "FastCopy"]]
 section Section1;
 shared Configuration = let
-    WorkbookPath          = ExcelUrl,
+    WorkbookPath          = #"File URL",
     PreferredSheetName    = "Sheet_Name",
-    SparseColumnThreshold = 0.75,
+    SparseColumnThreshold = 0.90,
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -57,9 +57,13 @@ shared Configuration = let
 
     // ── Pipeline ─────────────────────────────────────────────────────────────
 
-    Source      = Excel.Workbook(Web.Contents(WorkbookPath), null, true),
-    RawSheet    = GetFirstVisibleSheet(Source, PreferredSheetName),
-    NoErrors    = ReplaceErrorsWithNull(RawSheet),
+    IsCsv       = Text.Contains(Text.Lower(WorkbookPath), ".csv"),
+    FileContent = Web.Contents(WorkbookPath),
+    RawData     = if IsCsv then
+        Csv.Document(FileContent, [Delimiter = ";"])
+    else
+        GetFirstVisibleSheet(Excel.Workbook(FileContent, null, true), PreferredSheetName),
+    NoErrors    = ReplaceErrorsWithNull(RawData),
     NoEmptyRows = RemoveEmptyRows(NoErrors),
     Buffered    = Table.Buffer(NoEmptyRows),   // ← un seul buffer, avant toutes les analyses multi-passes
     NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
@@ -67,4 +71,10 @@ shared Configuration = let
     FinalTable  = Table.TransformColumnTypes(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, type text}))
 in
     FinalTable;
-shared ExcelUrl = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
+shared #"File URL" = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
+shared DefaultDestination = let
+  Source = Lakehouse.Contents([CreateNavigationProperties = false, EnableFolding = false, HierarchicalNavigation = null, EnableVorder = true, OutputMetadataRefresh = true]),
+  #"Navigation 1" = Source{[workspaceId = "."]}[Data],
+  #"Navigation 2" = #"Navigation 1"{[lakehouseName = "LH_BRONZE"]}[Data]
+in
+  #"Navigation 2";

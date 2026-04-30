@@ -1,0 +1,54 @@
+{
+  "formatVersion": "202502",
+  "computeEngineSettings": {
+    "allowModernEvaluationEngine": true
+  },
+  "name": "Dataflow Gateway",
+  "queryGroups": [],
+  "documentLocale": "en-US",
+  "gatewayObjectId": "dbcb8160-e851-4941-898a-3ba8c1ece0bf",
+  "queriesMetadata": {
+    "workspaceId": {
+      "queryId": "b51c1675-d96b-457a-8f91-f22e6aff40d1",
+      "queryName": "workspaceId",
+      "loadEnabled": false
+    },
+    "lakehouseId": {
+      "queryId": "22aa9a2c-556f-41cf-a61b-e59f8f3a4056",
+      "queryName": "lakehouseId",
+      "loadEnabled": false
+    },
+    "data": {
+      "queryId": "13ac0245-7739-4e42-8b72-8152e51f3630",
+      "queryName": "data",
+      "loadEnabled": false
+    },
+    "fxTransformFile": {
+      "queryId": "6536d00b-23c6-4f5d-a3eb-d3d98d5e6f2d",
+      "queryName": "fxTransformFile",
+      "loadEnabled": false
+    },
+    "DataDestination": {
+      "queryId": "bcd56a26-0a15-458d-80d7-0f42d9f0c57a",
+      "queryName": "DataDestination"
+    },
+    "ExcelFile": {
+      "queryId": "14534325-229c-4187-8ab8-34d60b570888",
+      "queryName": "ExcelFile",
+      "loadEnabled": false
+    }
+  },
+  "connections": [
+    {
+      "path": "Lakehouse",
+      "kind": "Lakehouse",
+      "connectionId": "{\"ClusterId\":\"7d66b12b-3b63-47bc-b79f-1cabfd93675b\",\"DatasourceId\":\"9fbf80b1-6efe-488c-8b6b-c3b92fdad106\"}"
+    },
+    {
+      "path": "\\\\tsnas01\\partage_toulouse\\BU_SUPPORT_CLIENTS\\Indicateurs\\data",
+      "kind": "Folder",
+      "connectionId": "{\"ClusterId\":\"dbcb8160-e851-4941-898a-3ba8c1ece0bf\",\"DatasourceId\":\"7f7ba52d-a417-4897-9bdc-1a94e14397af\"}"
+    }
+  ],
+  "parametric": true
+}

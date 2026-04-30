@@ -33,30 +33,18 @@
         "name": "Bronze_To_Silver",
         "dependsOn": [
           {
+            "activity": "Dataflow Gateway",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
             "activity": "Dataflow Excel",
             "dependencyConditions": [
               "Succeeded"
             ]
           }
         ]
-      },
-      {
-        "type": "RefreshDataflow",
-        "typeProperties": {
-          "dataflowId": "869013f2-d3d0-bc57-413d-9d4f4b8162d7",
-          "workspaceId": "00000000-0000-0000-0000-000000000000",
-          "notifyOption": "NoNotification",
-          "dataflowType": "DataflowFabric"
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "Dataflow Excel",
-        "dependsOn": []
       },
       {
         "type": "TridentNotebook",
@@ -149,6 +137,65 @@
             ]
           }
         ]
+      },
+      {
+        "type": "RefreshDataflow",
+        "typeProperties": {
+          "dataflowId": "ec6d57c7-af8a-adbf-428d-7b3d2d628189",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "notifyOption": "NoNotification",
+          "dataflowType": "DataflowFabric",
+          "parameters": {
+            "workspaceId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.EnvironmentVariables_WORKSPACE_ID",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "lakehouseId": {
+              "value": {
+                "value": "@pipeline().libraryVariables.EnvironmentVariables_BRONZE_LAKEHOUSE",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Dataflow Gateway",
+        "dependsOn": []
+      },
+      {
+        "type": "RefreshDataflow",
+        "typeProperties": {
+          "dataflowId": "869013f2-d3d0-bc57-413d-9d4f4b8162d7",
+          "workspaceId": "00000000-0000-0000-0000-000000000000",
+          "notifyOption": "NoNotification",
+          "dataflowType": "DataflowFabric"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Dataflow Excel",
+        "dependsOn": [
+          {
+            "activity": "Dataflow Gateway",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
       }
     ],
     "parameters": {
@@ -167,6 +214,18 @@
       "GOLD_LAKEHOUSE": {
         "type": "string",
         "defaultValue": "LH_GOLD"
+      }
+    },
+    "libraryVariables": {
+      "EnvironmentVariables_WORKSPACE_ID": {
+        "type": "String",
+        "variableName": "WORKSPACE_ID",
+        "libraryName": "Environment Variables"
+      },
+      "EnvironmentVariables_BRONZE_LAKEHOUSE": {
+        "type": "String",
+        "variableName": "BRONZE_LAKEHOUSE",
+        "libraryName": "Environment Variables"
       }
     }
   }

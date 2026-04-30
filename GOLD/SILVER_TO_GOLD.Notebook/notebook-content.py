@@ -39,7 +39,7 @@ print(ft.__version__)
 # META   "language_group": "synapse_pyspark"
 # META }
 
-# CELL ********************
+# PARAMETERS CELL ********************
 
 # --- Paramètres (adapter à votre environnement) ---
 SILVER_LAKEHOUSE = "LH_SILVER"
