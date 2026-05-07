@@ -75,7 +75,6 @@ result = ft.clean_and_write_all_tables(
     include_schemas=["dbo"],
     continue_on_error=True,
 )
-display(result)
 
 # METADATA ********************
 

@@ -71,7 +71,16 @@ dimensions = ft.generate_dimensions(
 
 # CELL ********************
 
-source = ft.read_lakehouse(SILVER_LAKEHOUSE, PATH_TABLE_)
+read_summary = ft.read_lakehouses(
+    [
+        {
+            "name": "source",
+            "lakehouse_name": SILVER_LAKEHOUSE,
+            "relative_path": PATH_TABLE_,
+        }
+    ]
+)
+source = read_summary["source"]
 
 # METADATA ********************
 
@@ -97,12 +106,17 @@ target = ft.build_tcd(source,
 
 # CELL ********************
 
-ft.write_lakehouse(
-    target,
-    lakehouse_name=SILVER_LAKEHOUSE,
-    relative_path=PATH_PROCESSED_TABLE_,
-    mode="overwrite",
- )
+summary = ft.write_lakehouses(
+    [
+        {
+            "name": "target",
+            "df": target,
+            "lakehouse_name": SILVER_LAKEHOUSE,
+            "relative_path": PATH_PROCESSED_TABLE_,
+            "mode": "overwrite",
+        }
+    ]
+)
 
 # METADATA ********************
 

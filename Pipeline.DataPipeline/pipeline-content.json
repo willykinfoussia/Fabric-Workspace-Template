@@ -196,6 +196,41 @@
             ]
           }
         ]
+      },
+      {
+        "type": "PBISemanticModelRefresh",
+        "typeProperties": {
+          "method": "post",
+          "groupId": "74c649b9-b15e-41ec-8695-d13d59eef281",
+          "datasetId": "370dd9c9-a2ea-4d6e-a8ce-74c5ed9d316f",
+          "commitMode": "Transactional",
+          "objects": [
+            {
+              "table": ""
+            }
+          ],
+          "waitOnCompletion": true,
+          "operationType": "SemanticModelRefresh"
+        },
+        "externalReferences": {
+          "connection": "af93ab64-0f0f-488a-bb10-95513ba28416"
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Semantic model Refresh",
+        "dependsOn": [
+          {
+            "activity": "Silver_To_Gold",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
       }
     ],
     "parameters": {
