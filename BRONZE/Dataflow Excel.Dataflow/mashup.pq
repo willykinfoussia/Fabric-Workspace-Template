@@ -1,9 +1,25 @@
 [DefaultOutputDestinationSettings = [DestinationDefinition = [Kind = "Reference", QueryName = "DefaultDestination", IsNewTarget = true], UpdateMethod = [Kind = "Replace"], DestinationTypeSettings = [Kind = "Table"]], StagingDefinition = [Kind = "FastCopy"]]
 section Section1;
-shared Configuration = let
-    WorkbookPath          = #"File URL",
-    PreferredSheetName    = "Sheet_Name",
-    SparseColumnThreshold = 0.90,
+shared #"File URL" = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
+[BindToDefaultDestination = true]
+shared fxTransformWebFile = // fxTransformWebFile
+// Usage : fxTransformWebFile(url)
+
+(WorkbookUrl as text, 
+ optional preferredSheetName as nullable text, 
+ optional sparseColumnThreshold as nullable number, 
+ optional csvDelimiter as nullable text) as table =>
+
+let
+    // ── Paramètres ───────────────────────────────────────────────────────────
+    PreferredSheetName    = if preferredSheetName = null then "Sheet_Name" else preferredSheetName,
+    SparseColumnThreshold = if sparseColumnThreshold = null then 0.90 else sparseColumnThreshold,
+    CsvDelimiter          = if csvDelimiter = null then ";" else csvDelimiter,
+
+    UrlLower = Text.Lower(WorkbookUrl),
+
+    // Détection CSV
+    IsCsv = Text.Contains(UrlLower, ".csv"),
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -22,8 +38,6 @@ shared Configuration = let
             List.Transform(Table.ColumnNames(t), each {_, null})
         ),
 
-    // List.MatchesAny court-circuite dès le 1er élément valide
-    // → évite de scanner toute la ligne quand une valeur non-nulle est trouvée tôt
     RemoveEmptyRows = (t as table) as table =>
         Table.SelectRows(
             t,
@@ -36,8 +50,6 @@ shared Configuration = let
             RowCount = Table.RowCount(t),
             ColData  = if RowCount = 0 then {} else Table.ToColumns(t),
 
-            // List.Accumulate : pas de liste intermédiaire allouée
-            // (vs List.Count(List.Select(...)) qui crée une liste filtrée en mémoire)
             CountNullOrEmpty = (lst as list) as number =>
                 List.Accumulate(lst, 0, (acc, v) => if v = null or v = "" then acc + 1 else acc),
 
@@ -55,23 +67,45 @@ shared Configuration = let
             if List.Count(ToRemove) = 0 then t
             else Table.RemoveColumns(t, ToRemove),
 
+    CleanColumnNames = (t as table) as table =>
+        Table.TransformColumnNames(
+            t,
+            each Text.Trim(Text.Clean(_))
+        ),
+
     // ── Pipeline ─────────────────────────────────────────────────────────────
 
-    IsCsv       = Text.Contains(Text.Lower(WorkbookPath), ".csv"),
-    FileContent = Web.Contents(WorkbookPath),
-    RawData     = if IsCsv then
-        Csv.Document(FileContent, [Delimiter = ";"])
-    else
-        GetFirstVisibleSheet(Excel.Workbook(FileContent, null, true), PreferredSheetName),
+    FileContent = Web.Contents(WorkbookUrl),
+
+    RawData =
+        if IsCsv then
+            Csv.Document(FileContent, [Delimiter = CsvDelimiter])
+        else
+            GetFirstVisibleSheet(
+                Excel.Workbook(FileContent, null, true),
+                PreferredSheetName
+            ),
+
     NoErrors    = ReplaceErrorsWithNull(RawData),
     NoEmptyRows = RemoveEmptyRows(NoErrors),
-    Buffered    = Table.Buffer(NoEmptyRows),   // ← un seul buffer, avant toutes les analyses multi-passes
+    Buffered    = Table.Buffer(NoEmptyRows),
     NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
+
     Promoted    = Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]),
-    FinalTable  = Table.TransformColumnTypes(Promoted, List.Transform(Table.ColumnNames(Promoted), each {_, type text}))
+    Cleaned     = CleanColumnNames(Promoted),
+
+    FinalTable =
+        Table.TransformColumnTypes(
+            Cleaned,
+            List.Transform(Table.ColumnNames(Cleaned), each {_, type text})
+        )
+
 in
     FinalTable;
-shared #"File URL" = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
+shared Configuration = let
+  Source = fxTransformWebFile(#"File URL", "Sheet_Name", 0.75)
+in
+  Source;
 shared DefaultDestination = let
   Source = Lakehouse.Contents([CreateNavigationProperties = false, EnableFolding = false, HierarchicalNavigation = null, EnableVorder = true, OutputMetadataRefresh = true]),
   #"Navigation 1" = Source{[workspaceId = "."]}[Data],

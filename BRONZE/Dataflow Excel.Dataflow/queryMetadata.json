@@ -7,14 +7,19 @@
   "queryGroups": [],
   "documentLocale": "en-US",
   "queriesMetadata": {
-    "Configuration": {
-      "queryId": "525b700d-a716-4d6b-a82d-2b405c402960",
-      "queryName": "Configuration"
-    },
     "File URL": {
       "queryId": "583ae0d8-44fe-4ac9-9a30-63a92fb43e3f",
       "queryName": "File URL",
       "loadEnabled": false
+    },
+    "fxTransformWebFile": {
+      "queryId": "0fd3c86d-ced0-42b8-8c80-3061dd877246",
+      "queryName": "fxTransformWebFile",
+      "loadEnabled": false
+    },
+    "Configuration": {
+      "queryId": "525b700d-a716-4d6b-a82d-2b405c402960",
+      "queryName": "Configuration"
     },
     "DefaultDestination": {
       "queryId": "2ac336c4-a0f2-4207-a5f4-58906bee6d7c",
