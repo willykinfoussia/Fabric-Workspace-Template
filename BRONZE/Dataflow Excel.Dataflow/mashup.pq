@@ -3,18 +3,20 @@ section Section1;
 shared #"File URL" = "" meta [IsParameterQuery = true, IsParameterQueryRequired = false, Type = type text];
 [BindToDefaultDestination = true]
 shared fxTransformWebFile = // fxTransformWebFile
-// Usage : fxTransformWebFile(url)
+// Usage : fxTransformWebFile(url, optional preferredSheetName, optional sparseColumnThreshold, optional csvDelimiter, optional headerRow)
 
 (WorkbookUrl as text, 
  optional preferredSheetName as nullable text, 
  optional sparseColumnThreshold as nullable number, 
- optional csvDelimiter as nullable text) as table =>
+ optional csvDelimiter as nullable text,
+ optional headerRow as nullable number) as table =>
 
 let
     // ── Paramètres ───────────────────────────────────────────────────────────
     PreferredSheetName    = if preferredSheetName = null then "Sheet_Name" else preferredSheetName,
     SparseColumnThreshold = if sparseColumnThreshold = null then 0.90 else sparseColumnThreshold,
     CsvDelimiter          = if csvDelimiter = null then ";" else csvDelimiter,
+    HeaderRow             = if headerRow = null or headerRow < 1 then 1 else Number.RoundDown(headerRow),
 
     UrlLower = Text.Lower(WorkbookUrl),
 
@@ -86,13 +88,18 @@ let
                 PreferredSheetName
             ),
 
-    NoErrors    = ReplaceErrorsWithNull(RawData),
-    NoEmptyRows = RemoveEmptyRows(NoErrors),
-    Buffered    = Table.Buffer(NoEmptyRows),
-    NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
+    NoErrors      = ReplaceErrorsWithNull(RawData),
 
-    Promoted    = Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]),
-    Cleaned     = CleanColumnNames(Promoted),
+    // ✅ Nouveau : se positionner sur la ligne d'en-tête
+    AlignedToHead = if HeaderRow <= 1 then NoErrors else Table.Skip(NoErrors, HeaderRow - 1),
+
+    NoEmptyRows   = RemoveEmptyRows(AlignedToHead),
+    Buffered      = Table.Buffer(NoEmptyRows),
+    NoSparse      = RemoveSparseColumns(Buffered, SparseColumnThreshold),
+
+    // PromoteHeaders peut planter si table vide => sécurisation
+    Promoted      = try Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]) otherwise NoSparse,
+    Cleaned       = CleanColumnNames(Promoted),
 
     FinalTable =
         Table.TransformColumnTypes(
@@ -103,7 +110,7 @@ let
 in
     FinalTable;
 shared Configuration = let
-  Source = fxTransformWebFile(#"File URL", "Sheet_Name", 0.75)
+  Source = fxTransformWebFile(#"File URL", "Sheet_Name", 0.75, null, 1)
 in
   Source;
 shared DefaultDestination = let

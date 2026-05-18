@@ -57,6 +57,26 @@ SILVER_LAKEHOUSE = "LH_SILVER"   # Nom du Lakehouse destination
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# CELL ********************
+
+if MODE_TEST:
+    ft.delete_all_lakehouse_tables(
+        lakehouse_name=BRONZE_LAKEHOUSE,
+        include_schemas=["dbo"])
+    ft.delete_all_lakehouse_tables(
+        lakehouse_name=SILVER_LAKEHOUSE,
+        include_schemas=["dbo"])
+    ft.delete_all_lakehouse_tables(
+        lakehouse_name="LH_GOLD",
+        include_schemas=["dbo"])
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # MARKDOWN ********************
 
 # ## Exécution du pipeline Bronze → Silver
