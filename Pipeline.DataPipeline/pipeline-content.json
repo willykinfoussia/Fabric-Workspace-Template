@@ -37,12 +37,6 @@
             "dependencyConditions": [
               "Succeeded"
             ]
-          },
-          {
-            "activity": "Dataflow Excel",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
           }
         ]
       },
@@ -170,82 +164,6 @@
           "secureOutput": false
         },
         "name": "Dataflow Gateway",
-        "dependsOn": []
-      },
-      {
-        "type": "RefreshDataflow",
-        "typeProperties": {
-          "dataflowId": "869013f2-d3d0-bc57-413d-9d4f4b8162d7",
-          "workspaceId": "00000000-0000-0000-0000-000000000000",
-          "notifyOption": "NoNotification",
-          "dataflowType": "DataflowFabric"
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "Dataflow Excel",
-        "dependsOn": [
-          {
-            "activity": "Dataflow Gateway",
-            "dependencyConditions": [
-              "Failed"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "PBISemanticModelRefresh",
-        "typeProperties": {
-          "method": "POST",
-          "groupId": "74c649b9-b15e-41ec-8695-d13d59eef281",
-          "datasetId": "370dd9c9-a2ea-4d6e-a8ce-74c5ed9d316f",
-          "commitMode": "Transactional",
-          "objects": [
-            {
-              "table": ""
-            }
-          ],
-          "waitOnCompletion": true,
-          "operationType": "SemanticModelRefresh"
-        },
-        "externalReferences": {
-          "connection": "af93ab64-0f0f-488a-bb10-95513ba28416"
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "Semantic model Refresh",
-        "dependsOn": [
-          {
-            "activity": "Silver_To_Gold",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "TridentNotebook",
-        "typeProperties": {
-          "notebookId": "70b98795-ebce-b2e5-4b62-9c8d5f77ed91",
-          "workspaceId": "00000000-0000-0000-0000-000000000000"
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "Bronze_To_Gold",
         "dependsOn": []
       }
     ],
