@@ -8,13 +8,22 @@ shared data = let
 in
   #"Filtered rows";
 shared fxTransformFile = // fxTransformFile
-// Usage typique (Folder) : fxTransformFile([Content], [Name])
-(content as binary, optional fileNameOrUrl as nullable text, optional preferredSheetName as nullable text, optional sparseColumnThreshold as nullable number, optional csvDelimiter as nullable text) as table =>
+// Usage typique (Folder) : fxTransformFile([Content], [Name], optional preferredSheetName, optional sparseColumnThreshold, optional csvDelimiter, optional headerRow)
+
+(content as binary, 
+ optional fileNameOrUrl as nullable text, 
+ optional preferredSheetName as nullable text, 
+ optional sparseColumnThreshold as nullable number, 
+ optional csvDelimiter as nullable text,
+ optional headerRow as nullable number) as table =>
+
 let
     // ── Paramètres (valeurs par défaut) ─────────────────────────────────────
     PreferredSheetName    = if preferredSheetName = null then "Sheet_Name" else preferredSheetName,
-    SparseColumnThreshold = if sparseColumnThreshold = null then 0.90 else sparseColumnThreshold,
     CsvDelimiter          = if csvDelimiter = null then ";" else csvDelimiter,
+
+    // ✅ Nouveau : ligne d’en-tête (>=1) + arrondi à l'entier inférieur
+    HeaderRow             = if headerRow = null or headerRow < 1 then 1 else Number.RoundDown(headerRow),
 
     FileIdLower           = if fileNameOrUrl = null then "" else Text.Lower(fileNameOrUrl),
 
@@ -67,7 +76,7 @@ let
             if List.Count(ToRemove) = 0 then t
             else Table.RemoveColumns(t, ToRemove),
 
-    // ✅ Helper lisible : Trim + Clean sur les noms de colonnes
+    // Trim + Clean sur les noms de colonnes
     CleanColumnNames = (t as table) as table =>
         Table.TransformColumnNames(
             t,
@@ -82,15 +91,24 @@ let
         else
             GetFirstVisibleSheet(Excel.Workbook(content, null, true), PreferredSheetName),
 
-    NoErrors    = ReplaceErrorsWithNull(RawData),
-    NoEmptyRows = RemoveEmptyRows(NoErrors),
-    Buffered    = Table.Buffer(NoEmptyRows),   // un seul buffer avant analyses multipasses
-    NoSparse    = RemoveSparseColumns(Buffered, SparseColumnThreshold),
+    NoErrors      = ReplaceErrorsWithNull(RawData),
 
-    Promoted    = Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]),
-    Renamed     = CleanColumnNames(Promoted),
+    // ✅ Nouveau : se positionner sur la ligne d'en-tête
+    AlignedToHead = if HeaderRow <= 1 then NoErrors else Table.Skip(NoErrors, HeaderRow - 1),
 
-    FinalTable  =
+    NoEmptyRows   = RemoveEmptyRows(AlignedToHead),
+
+    NoSparse = 
+        if sparseColumnThreshold = null then
+            NoEmptyRows
+        else
+            RemoveSparseColumns(Table.Buffer(NoEmptyRows), SparseColumnThreshold),
+
+    // PromoteHeaders peut planter si table vide => sécurisation (même approche que Web)
+    Promoted      = try Table.PromoteHeaders(NoSparse, [PromoteAllScalars = true]) otherwise NoSparse,
+    Renamed       = CleanColumnNames(Promoted),
+
+    FinalTable    =
         Table.TransformColumnTypes(
             Renamed,
             List.Transform(Table.ColumnNames(Renamed), each {_, type text})
