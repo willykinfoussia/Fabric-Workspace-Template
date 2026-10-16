@@ -127,3 +127,53 @@ shared ExcelFile = let
     Output  = fxTransformFile(OneFile{0}[Content], OneFile{0}[Name])
 in
     Output;
+shared #"Token PROD" = let
+    TokenResponse =
+        Json.Document(
+            Web.Contents(
+                "https://ifs-prd.mysharets.fr",
+                [
+                    RelativePath = "auth/realms/sphereaprd/protocol/openid-connect/token",
+                    Headers = [
+                        #"Content-Type" = "application/x-www-form-urlencoded"
+                    ],
+                    Content = Text.ToBinary(
+                        "grant_type=client_credentials" &
+                        "&client_id=SPH_BI" &
+                        "&client_secret=6pq7EzAcnxbwMFY7TJnRpfm0HsfUkhoM" &
+                        "&scope=openid+microprofile-jwt"
+                    )
+                ]
+            )
+        ),
+
+    AccessToken = TokenResponse[access_token]
+in
+    AccessToken;
+shared Customer = let
+    Source =
+        Json.Document(
+            Web.Contents(
+                "https://ifs-prd.mysharets.fr",
+                [
+                    RelativePath = "main/ifsapplications/projection/v1/CustomersHandling.svc/CustomerInfoSet",
+                    Headers = [
+                        Authorization = "Bearer " & #"Token PROD",
+                        Accept = "application/json"
+                    ]
+                ]
+            )
+        ),
+
+    Data =
+        if Record.HasFields(Source, "value")
+        then Table.FromRecords(Source[value])
+        else Table.FromRecords(Source),
+
+    FinalTable =
+        Table.TransformColumnTypes(
+            Data,
+            List.Transform(Table.ColumnNames(Data), each {_, type text})
+        )
+in
+    FinalTable;

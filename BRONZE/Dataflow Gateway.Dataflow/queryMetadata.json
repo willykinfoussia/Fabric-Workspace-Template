@@ -37,6 +37,14 @@
       "queryId": "14534325-229c-4187-8ab8-34d60b570888",
       "queryName": "ExcelFile",
       "loadEnabled": false
+    },
+    "Token PROD": {
+      "queryId": "edab17db-775c-40b8-8588-db33595e383b",
+      "queryName": "Token PROD"
+    },
+    "Customer": {
+      "queryId": "2f2a4514-ef2d-44cd-ab2b-7ffaf58aed16",
+      "queryName": "Customer"
     }
   },
   "connections": [
@@ -49,6 +57,11 @@
       "path": "\\\\tsnas01\\partage_toulouse\\BU_SUPPORT_CLIENTS\\Indicateurs\\data",
       "kind": "Folder",
       "connectionId": "{\"ClusterId\":\"dbcb8160-e851-4941-898a-3ba8c1ece0bf\",\"DatasourceId\":\"7f7ba52d-a417-4897-9bdc-1a94e14397af\"}"
+    },
+    {
+      "path": "https://ifs-prd.mysharets.fr/",
+      "kind": "Web",
+      "connectionId": "{\"ClusterId\":\"dbcb8160-e851-4941-898a-3ba8c1ece0bf\",\"DatasourceId\":\"e7d29da8-e325-4132-93dd-ec9581e4504d\"}"
     }
   ],
   "parametric": true
